@@ -52,62 +52,56 @@ def score_pair(left, right):
     return np.mean([space_score, parallel_score, same_y_score, sameness_score])
 
 
-class GateDetector:
-    def __init__(self):
-        pass
+def find(img, hue_min=20, hue_max=175, sat_min=0, sat_max=255, val_min=0, val_max=255):
+    """
+    Detect the qualification gate.
+    :param img: HSV image from the bottom camera
+    :return: tuple of location of the center of the gate in a "targeting" coordinate system: origin is at center of image, axes range [-1, 1]
+    """
 
-    def find(self, img):
-        """
-        Detect the qualification gate.
-        :param img: HSV image from the bottom camera
-        :return: tuple of location of the center of the gate in a "targeting" coordinate system: origin is at center of image, axes range [-1, 1]
-        """
+    img = np.copy(img)
 
-        img = np.copy(img)
+    bin = vision_common.hsv_threshold(img, hue_min, hue_max, sat_min, sat_max, val_min, val_max)
 
-        # TODO: get rid of these magic numbers
-        bin = vision_common.hsv_threshold(img, 20, 175, 0, 255, 0, 255)
+    canny = vision_common.canny(bin, 50)
 
-        canny = vision_common.canny(bin, 50)
+    # find contours after first processing it with Canny edge detection
+    contours, hierarchy = cv2.findContours(canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-        # find contours after first processing it with Canny edge detection
-        contours, hierarchy = cv2.findContours(canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    hulls = vision_common.convex_hulls(contours)
+    cv2.drawContours(bin, hulls, -1, 255)
 
-        hulls = vision_common.convex_hulls(contours)
-        cv2.drawContours(bin, hulls, -1, 255)
+    cv2.imshow('bin', bin)
 
-        cv2.imshow('bin', bin)
+    hulls.sort(key=hull_score)
 
-        hulls.sort(key=hull_score)
+    if len(hulls) < 2:
+        return ()
 
-        if len(hulls) < 2:
-            return ()
+    # get the two highest scoring candidates
+    left = cv2.minAreaRect(hulls[0])
+    right = cv2.minAreaRect(hulls[1])
 
-        # get the two highest scoring candidates
-        left = cv2.minAreaRect(hulls[0])
-        right = cv2.minAreaRect(hulls[1])
+    # if we got left and right mixed up, switch them
+    if right[0][0] < left[0][0]:
+        left, right = right, left
 
-        # if we got left and right mixed up, switch them
-        if right[0][0] < left[0][0]:
-            left, right = right, left
+    confidence = score_pair(left, right)
+    if confidence < 80:
+        return 0, 0
 
-        confidence = score_pair(left, right)
-        if confidence < 80:
-            return 0, 0
+    # draw hulls in Blaze Orange
+    cv2.drawContours(img, hulls, -1, (0, 102, 255), -1)
+    # draw green outlines so we know it actually detected it
+    cv2.drawContours(img, hulls, -1, (0, 255, 0), 2)
 
-        # draw hulls in Blaze Orange
-        cv2.drawContours(img, hulls, -1, (0, 102, 255), -1)
-        # draw green outlines so we know it actually detected it
-        cv2.drawContours(img, hulls, -1, (0, 255, 0), 2)
+    cv2.imshow('img', img)
 
-        cv2.imshow('img', img)
-
-        return np.mean([left[0][0], right[0][0]]), np.mean([left[0][1], right[0][1]])
+    return np.mean([left[0][0], right[0][0]]), np.mean([left[0][1], right[0][1]])
 
 
 img = cv2.imread('sample.jpg', cv2.IMREAD_COLOR)
-detector = GateDetector()
-loc = detector.find(img)
+loc = find(img)
 
 cv2.waitKey(0)
 cv2.destroyAllWindows()
