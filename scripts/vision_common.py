@@ -45,7 +45,7 @@ def canny(img, lowThreshold):
 
     # canny recommends that the high threshold be 3 times the low threshold
     # the kernel size is 3 as defined above
-    cv2.Canny(dst, lowThreshold, lowThreshold * 3, dst, 3)
+    return cv2.Canny(dst, lowThreshold, lowThreshold * 3, dst, 3)
 
 
 def convex_hulls(contours):
