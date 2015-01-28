@@ -97,7 +97,13 @@ def find(img, hue_min=20, hue_max=175, sat_min=0, sat_max=255, val_min=0, val_ma
 
     cv2.imshow('img', img)
 
-    return np.mean([left[0][0], right[0][0]]), np.mean([left[0][1], right[0][1]])
+    center_actual = (np.mean([left[0][0], right[0][0]]), np.mean([left[0][1], right[0][1]]))
+    # shape[0] is the number of rows because matrices are dumb
+    center = (center_actual[0] / img.shape[1], center_actual[1] / img.shape[0])
+    # convert to the targeting system of [-1, 1]
+    center = ((center[0] * 2) - 1, (center[1] * 2) - 1)
+
+    return center
 
 
 img = cv2.imread('sample.jpg', cv2.IMREAD_COLOR)
