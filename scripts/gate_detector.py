@@ -1,8 +1,8 @@
-import cv2
-
 import numpy as np
 
-import vision_common
+import cv2
+
+from vision_common.src import vision_util
 
 
 def hull_score(hull):
@@ -38,7 +38,7 @@ def score_pair(left, right):
     space_score = 100 - .5 * abs(space_score)
 
     # score based on the parallel-ity of the two sides
-    parallel_score = abs(vision_common.angle(left) - vision_common.angle(right))
+    parallel_score = abs(vision_util.angle(left) - vision_util.angle(right))
     parallel_score = 100 - abs(parallel_score)
 
     # score based on the similarity in sizes
@@ -61,14 +61,14 @@ def find(img, hue_min=20, hue_max=175, sat_min=0, sat_max=255, val_min=0, val_ma
 
     img = np.copy(img)
 
-    bin = vision_common.hsv_threshold(img, hue_min, hue_max, sat_min, sat_max, val_min, val_max)
+    bin = vision_util.hsv_threshold(img, hue_min, hue_max, sat_min, sat_max, val_min, val_max)
 
-    canny = vision_common.canny(bin, 50)
+    canny = vision_util.canny(bin, 50)
 
     # find contours after first processing it with Canny edge detection
     contours, hierarchy = cv2.findContours(canny, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
-    hulls = vision_common.convex_hulls(contours)
+    hulls = vision_util.convex_hulls(contours)
     cv2.drawContours(bin, hulls, -1, 255)
 
     cv2.imshow('bin', bin)
