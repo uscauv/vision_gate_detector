@@ -2,7 +2,7 @@ import numpy as np
 
 import cv2
 
-from vision_common.src import vision_util
+import vision_util
 
 
 def hull_score(hull):
@@ -104,10 +104,3 @@ def find(img, hue_min=20, hue_max=175, sat_min=0, sat_max=255, val_min=0, val_ma
     center = ((center[0] * 2) - 1, (center[1] * 2) - 1)
 
     return center
-
-
-img = cv2.imread('sample.jpg', cv2.IMREAD_COLOR)
-loc = find(img)
-
-cv2.waitKey(0)
-cv2.destroyAllWindows()
